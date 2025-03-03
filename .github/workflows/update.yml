@@ -1,0 +1,27 @@
+name: Update Latest Hash
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  updateHash:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fetch Latest Commit Hash
+        run: |
+          LATEST_HASH=$(git ls-remote https://github.com/sm64jsarchived/sm64jsarchive.git HEAD | awk '{print $1}')
+          echo "{ \"latest_hash\": \"$LATEST_HASH\" }" > hash.json
+
+      - uses: EndBug/add-and-commit@v9
+        with:
+          author_name: "Hash Updater"
+          author_email: "gman36147@gmail.com"
+          add: "hash.json --force"
+          message: "update hash"
