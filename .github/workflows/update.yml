@@ -14,12 +14,26 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Fetch Latest Commit Hash
+      - name: Fetch Latest Commit Hash from sm64jsarchived/sm64jsarchive
         run: |
           LATEST_HASH=$(git ls-remote https://github.com/sm64jsarchived/sm64jsarchive.git HEAD | awk '{print $1}')
-          echo "{ \"latest_hash\": \"$LATEST_HASH\" }" > hash.json
+          echo "LATEST_HASH=$LATEST_HASH" >> $GITHUB_ENV
 
-      - uses: EndBug/add-and-commit@v9
+      - name: Check if the latest hash is new
+        id: check_changes
+        run: |
+          CURRENT_HASH=$(jq -r '.latest_hash' hash.json 2>/dev/null || echo "none")
+          if [ "$CURRENT_HASH" == "$LATEST_HASH" ]; then
+            echo "No new updates. Exiting."
+            exit 0
+          else
+            echo "New update detected!"
+            echo "{ \"latest_hash\": \"$LATEST_HASH\" }" > hash.json
+          fi
+
+      - name: Commit and Push if Changed
+        if: success()
+        uses: EndBug/add-and-commit@v9
         with:
           author_name: "Hash Updater"
           author_email: "gman36147@gmail.com"
